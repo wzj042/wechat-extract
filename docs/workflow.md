@@ -159,6 +159,8 @@ uv run wechat-extract export-media --account-dir "$plainAccount" --source-accoun
 
 DAT 头部长度存在两种解释。默认 `--aes-size-mode ciphertext`，已知数据采用明文长度语义时显式改为 `plaintext`；程序不会自动猜两种模式。密钥错误、格式不匹配和文件未下载完整都可能导致失败，不能一概判断为图片密钥过期。
 
+2026-11-05 实机抽样中，15 条图片消息均需用 `--aes-size-mode plaintext` 才能一致通过校验；默认模式下只有 3 条 JPEG 返回成功。能识别文件头或打开少数 JPEG，不足以判定模式正确。该结果仅适用于本次样本，完整经过见 [实机验证记录](runtime-validation.md)。
+
 ### 可选：不按消息定位，批量处理会话目录
 
 ```powershell
