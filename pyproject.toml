@@ -1,0 +1,38 @@
+[project]
+name = "wechat-extract"
+version = "0.1.0"
+description = "Windows-first local data extraction for WeChat 4.x: key extraction, database decryption, message reading and media export, with an MCP server."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "cryptography>=41.0.0",
+    "zstandard>=0.22.0",
+    "Pillow>=12.0.0",
+    "mcp>=1.20,<2",
+    "silk-python>=0.2",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[project.scripts]
+wechat-extract = "wechat_extract.cli:main"
+wechat-image-decrypt = "wechat_extract.wxdat:main"
+wechat-mcp = "wechat_extract.mcp_server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/wechat_extract"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"THIRD_PARTY_NOTICES.md" = "wechat_extract/_notices/THIRD_PARTY_NOTICES.md"
+"README.md" = "wechat_extract/_notices/README.md"
+"docs" = "wechat_extract/_notices/docs"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

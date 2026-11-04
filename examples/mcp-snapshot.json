@@ -1,0 +1,7 @@
+{
+  "mode": "snapshot",
+  "source_account_dir": "D:/xwechat_files/example",
+  "account_dir": "../output/databases/example",
+  "output_dir": "../output/mcp-media",
+  "aes_size_mode": "ciphertext"
+}

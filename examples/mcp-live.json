@@ -1,0 +1,9 @@
+{
+  "mode": "live",
+  "db_dir": "D:/xwechat_files/example/db_storage",
+  "source_account_dir": "D:/xwechat_files/example",
+  "account_dir": "mcp-cache/account",
+  "output_dir": "../output/mcp-media",
+  "key_file": "db-key.txt",
+  "aes_size_mode": "ciphertext"
+}

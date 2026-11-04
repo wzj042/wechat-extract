@@ -1,0 +1,34 @@
+{
+  "reviewed_on": "2026-11-04",
+  "target": "private-repository",
+  "issues_apply_to": "future-public-open-source-release",
+  "issues": [
+    {
+      "id": "wcda_permission_unresolved",
+      "status": "blocked",
+      "files": ["src/wechat_extract/wechat_decrypt.py", "src/wechat_extract/app_paths.py", "src/wechat_extract/database_filters.py", "src/wechat_extract/sqlite_diagnostics.py", "src/wechat_extract/logging_config.py", "src/wechat_extract/request_logging.py", "src/wechat_extract/sqlite_wal.py", "src/wechat_extract/message_types.py"],
+      "evidence": "https://github.com/LifeArchiveProject/WeChatDataAnalysis/tree/a0390ad330f98f07c6403e9b33fb2bd2f1839835",
+      "resolution": "Obtain permission covering the derived files, or replace/remove them with independently documented implementations."
+    },
+    {
+      "id": "weflow_noncommercial_and_unpinned_origin",
+      "status": "blocked",
+      "files": ["src/wechat_extract/wxdat.py"],
+      "evidence": "https://github.com/hicccc77/WeFlow/blob/91adcfdbb24e8e147d8332440b8c6ac899ad2abf/LICENSE",
+      "resolution": "Recover original provenance and permission, or replace/remove derived implementation for a standard open-source release."
+    },
+    {
+      "id": "unpublished_key_extractor_provenance",
+      "status": "needs_review",
+      "files": ["tools/extract_windows_key.py"],
+      "evidence": "https://github.com/328336690/wechat-decrypt/blob/44427c45786feba4e5fc21625f7934528a83f624/LICENSE",
+      "resolution": "Trace unpublished modifications and WCDA-derived portions; upstream MIT alone is insufficient evidence for all modifications."
+    },
+    {
+      "id": "remaining_code_and_dependency_review",
+      "status": "needs_review",
+      "files": ["src", "tests", "tools", "uv.lock"],
+      "resolution": "Finish file-level provenance and dependency notices review; select a project license only after compatible permissions are established."
+    }
+  ]
+}
