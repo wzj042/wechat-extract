@@ -57,7 +57,7 @@ uv run wechat-image-decrypt --wxid-dir "<账号目录名>" --chat example@chatro
 
 复用本机 `kvcomm` 信息推导图片密钥，处理 V2 `.dat`。`--account-dir` 指定真实存储位置，`--userprofile` 指定 `kvcomm` 所在的用户主目录；显式目录无效时不会回退到其他账号。WXGF 转为 JPEG 需要可用的 `ffmpeg`。`--keys` 会显式显示图片密钥，仅在确实需要查看时使用。
 
-输出按账号来源、会话、月份隔离；文件修改时间不是消息时间。默认按头部 AES 长度为密文长度解释（`ciphertext`），`--aes-size-mode plaintext` 显式使用明文长度变体，两种模式均保留中间未加密数据段。
+输出按账号来源、会话、月份隔离；文件修改时间不是消息时间。默认按文件识别 DAT 的 AES 段长度；如需复现旧行为，可指定 `--aes-size-mode ciphertext` 或 `plaintext`。
 
 ## 跨分片读取与图片定位
 
@@ -81,7 +81,7 @@ uv run wechat-extract export-media --account-dir "<明文账号目录>" --source
 
 输出按账号来源、分片、消息表和消息编号隔离；合并转发另带 `data_index`，避免相同编号、相同文件名覆盖。图片先稳定读取、解密，再通过 Pillow 完整解码校验，最后原子写出；WXGF 转换需要 `ffmpeg`。语音保留原始 SILK，只校验头部；视频和普通文件仅验证读取稳定性。
 
-图片默认从本机 `kvcomm` 推导密钥；也可传 `--image-key-file data/image-keys.json`，JSON 字段为 `aes_key`（16 位 ASCII 或 32 位 hex）与 `xor_key`（0–255）。DAT 长度语义通过 `--aes-size-mode` 显式选择。多候选、未缓存、损坏和解密失败分别返回状态；成功退出码为 0，其余为非零。有限真实样本的结果见 [媒体验证记录](docs/media-validation.md)。
+图片默认从本机 `kvcomm` 推导密钥；也可传 `--image-key-file data/image-keys.json`，JSON 字段为 `aes_key`（16 位 ASCII 或 32 位 hex）与 `xor_key`（0–255）。默认 `auto` 根据块边界与填充识别 DAT 长度语义；按消息导出的成功结果在 `aes_size_mode` 中报告实际模式。多候选、未缓存、损坏和解密失败分别返回状态；成功退出码为 0，其余为非零。有限真实样本的结果见 [媒体验证记录](docs/media-validation.md)。
 
 ## MCP 服务
 

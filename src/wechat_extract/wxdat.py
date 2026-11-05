@@ -114,13 +114,13 @@ class ImageKeyProvider:
 # ─────────────────────────── V2 解密 ───────────────────────────
 
 def dat_decrypt(data: bytes, xor_key: int, aes_key, strip_pkcs7: bool = True,
-                *, aes_size_mode: str = "ciphertext"):
+                *, aes_size_mode: str = "auto"):
     """解 V2 .dat。返回 (明文, meta)。
 
     aes_key: 16 位 ASCII 串 / bytes(16) / 32 位 hex 串
     布局: [15B 头][AES-ECB 密文][未加密中段][xor_size 单字节 XOR]。
     已验证变体的头部 aes_size 为密文长度；plaintext 模式则为填充前明文长度。
-    两种语义不能仅凭整倍数长度判断，需由调用者显式选择。
+    auto 按 AES 对齐和边界处的加密填充块识别，仍可显式指定模式。
     """
     if len(data) < HEADER_LEN:
         raise ValueError("文件太小，无法解析")
@@ -128,11 +128,24 @@ def dat_decrypt(data: bytes, xor_key: int, aes_key, strip_pkcs7: bool = True,
         raise ValueError("不是 V1/V2 格式")
     aes_size, xor_size = struct.unpack_from("<LL", data, 6)
     version = data[14]
+    key = _coerce_aes_key(aes_key)
+    if aes_size_mode == "auto":
+        # AES 密文必为整块。明文长度恰好对齐时，PKCS7 会另加一个
+        # 完整的填充块；只在 AES/中段范围内比对，不能借用 XOR 尾部。
+        if aes_size % 16:
+            aes_size_mode = "plaintext"
+        else:
+            boundary = HEADER_LEN + aes_size
+            aes_size_mode = "ciphertext"
+            if boundary + 16 <= len(data) - xor_size:
+                encryptor = Cipher(algorithms.AES(key), modes.ECB()).encryptor()
+                marker = encryptor.update(bytes([16]) * 16) + encryptor.finalize()
+                if data[boundary:boundary + 16] == marker:
+                    aes_size_mode = "plaintext"
     if aes_size_mode not in ("ciphertext", "plaintext"):
-        raise ValueError("aes_size_mode 必须为 ciphertext 或 plaintext")
+        raise ValueError("aes_size_mode 必须为 auto、ciphertext 或 plaintext")
     encrypted_size = aes_size if aes_size_mode == "ciphertext" else (aes_size // 16 + 1) * 16
 
-    key = _coerce_aes_key(aes_key)
     off = HEADER_LEN
     ct = data[off:off + encrypted_size]
     if len(ct) != encrypted_size:
@@ -285,7 +298,7 @@ class ImagePipeline:
     """统一的取密钥 -> 解密 -> 转 JPEG 流程。"""
 
     def __init__(self, userprofile: str | None = None, account_dir: str | Path | None = None,
-                 aes_size_mode: str = "ciphertext"):
+                 aes_size_mode: str = "auto"):
         self.kp = ImageKeyProvider(userprofile)
         self.userprofile = self.kp.userprofile
         self.account_dir = account_dir
@@ -366,7 +379,7 @@ class ImagePipeline:
         return ok, fail, outdir
 
     @staticmethod
-    def _decrypt_one(data: bytes, keys, *, aes_size_mode: str = "ciphertext"):
+    def _decrypt_one(data: bytes, keys, *, aes_size_mode: str = "auto"):
         for xk, ak in keys:
             try:
                 out, meta = dat_decrypt(data, xk, ak, aes_size_mode=aes_size_mode)
@@ -387,8 +400,8 @@ def main(argv=None):
     ap.add_argument("--chat", help="会话 username, 如 example@chatroom")
     ap.add_argument("--out", default="wxdat_out")
     ap.add_argument("--userprofile", help="用户主目录（默认当前用户 USERPROFILE）")
-    ap.add_argument("--aes-size-mode", choices=("ciphertext", "plaintext"), default="ciphertext",
-                    help="头部 AES 长度语义（默认为已验证的 ciphertext；另一变体用 plaintext）")
+    ap.add_argument("--aes-size-mode", choices=("auto", "ciphertext", "plaintext"), default="auto",
+                    help="头部 AES 长度语义（默认 auto 按文件识别，可显式覆盖）")
     ap.add_argument("--keys", action="store_true", help="只打印密钥信息")
     a = ap.parse_args(argv)
 

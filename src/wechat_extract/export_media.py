@@ -80,14 +80,14 @@ def _trim_dat_footer(data):
 
 def export_image(account_dir, source_account_dir, conversation, local_id, output_dir, *,
                  shard, tier="best", xor_key=None, aes_key=None, key_provider=None,
-                 aes_size_mode="ciphertext", ffmpeg="ffmpeg"):
+                 aes_size_mode="auto", ffmpeg="ffmpeg"):
     """不下载、不控制 UI；两种显式密钥必须同时提供，失败结果不包含密钥或正文。"""
     if (xor_key is None) != (aes_key is None):
         raise ValueError("xor_key 与 aes_key 必须同时提供")
     if not isinstance(shard, str) or not shard:
         raise ValueError("导出必须提供非空 shard")
-    if aes_size_mode not in ("ciphertext", "plaintext"):
-        raise ValueError("aes_size_mode 必须为 ciphertext 或 plaintext")
+    if aes_size_mode not in ("auto", "ciphertext", "plaintext"):
+        raise ValueError("aes_size_mode 必须为 auto、ciphertext 或 plaintext")
     identity = {
         "account": str(Path(account_dir).resolve()), "conversation": conversation,
         "table": "Msg_" + hashlib.md5(conversation.encode()).hexdigest(),
@@ -124,7 +124,9 @@ def export_image(account_dir, source_account_dir, conversation, local_id, output
         if len(data) < 15:
             return fail("incomplete", "dat_header_truncated")
         aes_size, xor_size = struct.unpack_from("<LL", data, 6)
-        cipher_size = aes_size if aes_size_mode == "ciphertext" else (aes_size // 16 + 1) * 16
+        # auto 模式下先检查必要的最小长度，实际边界由 dat_decrypt 判定。
+        needs_padding = aes_size_mode == "plaintext" or (aes_size_mode == "auto" and aes_size % 16)
+        cipher_size = (aes_size // 16 + 1) * 16 if needs_padding else aes_size
         if len(data) < 15 + cipher_size + xor_size:
             return fail("incomplete", "dat_payload_truncated")
         try:
@@ -138,15 +140,15 @@ def export_image(account_dir, source_account_dir, conversation, local_id, output
         candidates = []
         for xkey, akey in keys:
             try:
-                candidate, _ = dat_decrypt(data, xkey, akey, aes_size_mode=aes_size_mode)
+                candidate, meta = dat_decrypt(data, xkey, akey, aes_size_mode=aes_size_mode)
                 if candidate.startswith(b"wxgf") or _known_image(candidate):
-                    candidates.append(candidate)
+                    candidates.append((candidate, meta["aesSizeMode"]))
             except (ValueError, TypeError, OverflowError):
                 continue
         if not candidates:
             return fail("decrypt_failed", "wrong_key_or_invalid_payload")
     elif _known_image(data) or data.startswith(b"wxgf"):
-        candidates = [data]
+        candidates = [(data, None)]
     else:
         return fail("unsupported", "unknown_image_content")
 
@@ -159,7 +161,7 @@ def export_image(account_dir, source_account_dir, conversation, local_id, output
         with tempfile.TemporaryDirectory(prefix=".export-", dir=destination) as temporary:
             temp = Path(temporary)
             conversion_failed = False
-            for candidate in candidates:
+            for candidate, resolved_mode in candidates:
                 candidate, footer_size = _trim_dat_footer(candidate) if encrypted else (candidate, 0)
                 if candidate.startswith(b"wxgf"):
                     converted = temp / "converted.jpg"
@@ -186,7 +188,7 @@ def export_image(account_dir, source_account_dir, conversation, local_id, output
                 os.replace(staged, final)
                 return dict(result, status="ok", reason="", output_path=str(final),
                             width=width, height=height, format=extension,
-                            trimmed_footer_bytes=footer_size)
+                            trimmed_footer_bytes=footer_size, aes_size_mode=resolved_mode)
             if conversion_failed:
                 return fail("conversion_failed", "wxgf_conversion_failed")
             return fail("decrypt_failed" if encrypted else "incomplete",
@@ -197,7 +199,7 @@ def export_image(account_dir, source_account_dir, conversation, local_id, output
 
 def export_media(account_dir, source_account_dir, conversation, local_id, output_dir, *,
                  shard, kind="auto", tier="best", aes_key=None, xor_key=None,
-                 key_provider=None, aes_size_mode="ciphertext", ffmpeg="ffmpeg",
+                 key_provider=None, aes_size_mode="auto", ffmpeg="ffmpeg",
                  data_index=None, filename=None, emoji_hosts=None, fetch=None):
     """统一入口；图片和表情完整解码校验，其他附件只保证稳定读取和原子复制，不伪称已解码。
 

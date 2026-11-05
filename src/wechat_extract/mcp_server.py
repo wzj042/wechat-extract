@@ -139,7 +139,7 @@ def create_server(runtime):
             runtime.account_dir, runtime.source_account_dir, row["conversation"], row["local_id"],
             runtime.output_dir, shard=row["shard"], kind=kind, tier=tier,
             aes_key=config.get("image_aes_key"), xor_key=config.get("image_xor_key"),
-            aes_size_mode=config.get("aes_size_mode", "ciphertext"),
+            aes_size_mode=config.get("aes_size_mode", "auto"),
             ffmpeg=config.get("ffmpeg", "ffmpeg"), data_index=data_index, filename=filename,
             emoji_hosts=config.get("emoji_cdn_hosts"),
         )

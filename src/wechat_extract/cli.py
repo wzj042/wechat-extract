@@ -143,7 +143,7 @@ def build_parser() -> argparse.ArgumentParser:
     export.add_argument("--tier", choices=("best", "original", "mid", "thumb"), default="best")
     export.add_argument("--image-key-file", help="可选 JSON 密钥文件，字段 aes_key、xor_key；默认从本机 kvcomm 推导")
     export.add_argument("--userprofile", help="本机 kvcomm 所在用户主目录")
-    export.add_argument("--aes-size-mode", choices=("ciphertext", "plaintext"), default="ciphertext")
+    export.add_argument("--aes-size-mode", choices=("auto", "ciphertext", "plaintext"), default="auto")
     export.add_argument("--ffmpeg", default="ffmpeg")
     export.add_argument("--data-index", type=int, help="record-file 的 0 基项目序号")
     export.add_argument("--filename", help="record-file 的真实文件名")

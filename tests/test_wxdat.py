@@ -111,6 +111,9 @@ def test_both_header_layouts_keep_raw_middle(mode, plain_size, tail):
     decoded, meta = dat_decrypt(data, 0x88, key, aes_size_mode=mode)
     assert decoded == plain + middle + tail
     assert meta["rawSize"] == len(middle)
+    automatic, detected = dat_decrypt(data, 0x88, key)
+    assert automatic == plain + middle + tail
+    assert detected["aesSizeMode"] == mode
 
 
 def test_plaintext_header_requires_matching_padding():

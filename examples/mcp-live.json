@@ -5,5 +5,5 @@
   "account_dir": "mcp-cache/account",
   "output_dir": "../output/mcp-media",
   "key_file": "db-key.txt",
-  "aes_size_mode": "ciphertext"
+  "aes_size_mode": "auto"
 }

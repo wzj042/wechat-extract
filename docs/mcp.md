@@ -23,7 +23,7 @@ HTTP 模式必须显式给出 `--port`。默认只绑定 `127.0.0.1`（`--host` 
   "account_dir": "mcp-cache/account",
   "output_dir": "../output/mcp-media",
   "key_file": "db-key.txt",
-  "aes_size_mode": "plaintext"
+  "aes_size_mode": "auto"
 }
 ```
 

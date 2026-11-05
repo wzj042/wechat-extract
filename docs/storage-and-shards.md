@@ -60,6 +60,6 @@ record_file = resolve_record_file(
 
 `paths.resolve_account_dir()` 可接收账号目录、`db_storage`、账号容器或存储根，有限层级发现，多个账号必须指定。`--account-dir` 不自动读取配置/注册表；自定义位置由调用者明确传入。支持识别包含 4.x `db_storage` 或 `msg/attach` 的目录，不声明支持旧 3.x 数据解密。
 
-旧实现的实测记录表明头部 `aes_size` 为密文长度；参考项目按填充前明文长度解释。整倍数时两者无法仅凭长度消歧，因此默认 `ciphertext` 保持原实现，显式 `plaintext` 采用 `floor(aes_size/16)*16+16` 密文长度并检查 PKCS7 和解填充长度。两者均拼接 AES 解密段、中间明文段、尾部 XOR 段。
+旧实现的实测记录表明头部 `aes_size` 为密文长度；参考项目按填充前明文长度解释。默认 `auto` 对未对齐的长度选择 `plaintext`；对整块长度，用当前密钥比对边界后的加密全填充块（排除 XOR 尾部），匹配选 `plaintext`，否则选 `ciphertext`。`plaintext` 采用 `floor(aes_size/16)*16+16` 密文长度并检查 PKCS7 和解填充长度。两者均拼接 AES 解密段、中间明文段、尾部 XOR 段。
 
 原先真实媒体测试中的单片读取、local_id 字典和全账号文件名搜索已移除。现在仅在 `WECHAT_RUN_MEDIA_TESTS=1` 且显式指定 `WECHAT_TEST_ACCOUNT_DIR`、`WECHAT_TEST_SOURCE_ACCOUNT_DIR`、`WECHAT_TEST_CHAT` 时验证所选会话；默认测试只用合成数据。
